@@ -49,7 +49,7 @@ class WordpressDirectoryService(DirectoryService):
 
   def authenticate(self, username, password):
     try:
-      self._proxy.blogger.getUserInfo('', username, password)
+      self._proxy.wp.getUsersBlogs(username, password)
       return True
     except:
       return False
