@@ -7,14 +7,11 @@ __all__ = [
     "WordpressDirectoryRecord",
 ]
 
-import xmlrpclib
-import uuid
+import xmlrpclib, urllib, uuid
 
-from time import time
-
+from urlparse import urlparse
 from twisted.cred.credentials import UsernamePassword
 from twisted.web2.auth.digest import DigestedCredentials
-from twisted.python.filepath import FilePath
 
 from twistedcaldav.directory.directory import DirectoryService, DirectoryRecord
 
@@ -46,6 +43,7 @@ class WordpressDirectoryService(DirectoryService):
     self._proxy = xmlrpclib.ServerProxy(url)
     self._username = username
     self._password = password
+    self._domain = urlparse(url).netloc
 
   def authenticate(self, username, password):
     try:
@@ -73,6 +71,7 @@ class WordpressDirectoryService(DirectoryService):
             recordType = recordType,
             guid = str(uuid.uuid5(uuid.NAMESPACE_OID, author['user_id'])),
             shortNames = (author['user_login'], ),
+            email = '%(name)s@%(domain)s'%{'name': author['user_login'], 'domain': self._domain},
           )
           self.cache[author['user_login']] = record
         
@@ -95,12 +94,13 @@ class WordpressDirectoryRecord(DirectoryRecord):
   """
   Wordpress based implementation implementation of L{IDirectoryRecord}.
   """
-  def __init__(self, service, recordType, guid, shortNames):
+  def __init__(self, service, recordType, guid, shortNames, email):
     super(WordpressDirectoryRecord, self).__init__(
         service               = service,
         recordType            = recordType,
         guid                  = guid,
         shortNames            = shortNames,
+        calendarUserAddresses = set(email),
     )
     
     self._service = service
