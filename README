@@ -1,0 +1,4 @@
+How to test
+
+ 1. Copy wordpress*.py and test/test_wordpress*.py to CalendarServer-2.4/twistedcaldav/directory
+ 2. Run ./test twistedcaldav.directory.test.test_wordpressdirectory or twistedcaldav.directory.test.test_wordpressmysqldirectory

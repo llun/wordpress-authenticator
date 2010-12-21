@@ -71,7 +71,7 @@ class WordpressDirectoryService(DirectoryService):
             recordType = recordType,
             guid = str(uuid.uuid5(uuid.NAMESPACE_OID, author['user_id'])),
             shortNames = (author['user_login'], ),
-            email = '%(name)s@%(domain)s'%{'name': author['user_login'], 'domain': self._domain},
+            email = 'mailto:%(name)s@%(domain)s'%{'name': author['user_login'], 'domain': self._domain},
           )
           self.cache[author['user_login']] = record
         
