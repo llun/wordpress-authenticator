@@ -73,6 +73,8 @@ class WordpressMySQLDirectoryService(DirectoryService):
     cursor.execute (query)
     
     rows = cursor.fetchall()
+    cursor.close()
+    
     for row in rows:
       user_id = row[0]
       user_login = row[1]
@@ -80,16 +82,42 @@ class WordpressMySQLDirectoryService(DirectoryService):
       user_mail = row[3]
       user_pass = row[4]
       
+      #Fetch user first name and last name
+      query = "select meta_value from %(table)s \
+               where `meta_key` = 'first_name' \
+               and `user_id` = %(user_id)d"%{"table": prefix + "usermeta", "user_id": user_id}
+      cursor = self._conn.cursor()
+      cursor.execute (query)
+      
+      user_firstname = cursor.fetchone()
+      cursor.close()
+      
+      query = "select meta_value from %(table)s \
+               where `meta_key` = 'last_name' \
+               and `user_id` = %(user_id)d"%{"table": prefix + "usermeta", "user_id": user_id}
+      cursor = self._conn.cursor()
+      cursor.execute (query)
+      
+      user_lastname = cursor.fetchone()
+      cursor.close()
+      
+      user_fullname = ""
+      
+      if user_firstname is not None:
+        user_fullname = "%s %s"%(user_firstname, user_lastname)
+      
+      
       record = WordpressMySQLDirectoryRecord(service = self,
                                              recordType = recordType,
                                              guid = str(uuid.uuid5(uuid.NAMESPACE_OID, str(user_id))),
                                              shortNames = (user_login, ),
                                              email = "mailto:%s"%user_mail,
-                                             password = user_pass)
+                                             password = user_pass,
+                                             firstname = user_firstname,
+                                             lastname = user_lastname,
+                                             fullname = user_fullname)
       self.cache[user_login] = record
       records.append(record)
-
-    cursor.close()
     
     return records
       
@@ -106,13 +134,18 @@ class WordpressMySQLDirectoryRecord(DirectoryRecord):
   """
   Wordpress MySQL based implementation implementation of L{IDirectoryRecord}.
   """
-  def __init__(self, service, recordType, guid, shortNames, email, password):
+  def __init__(self, service, recordType, guid, 
+               shortNames, email, password, 
+               firstname = None, lastname = None, fullname = None):
     super(WordpressMySQLDirectoryRecord, self).__init__(
         service               = service,
         recordType            = recordType,
         guid                  = guid,
         shortNames            = shortNames,
         calendarUserAddresses = (email, ),
+        firstName             = firstname,
+        lastName              = lastname,
+        fullName              = fullname,
     )
     
     self._service = service
