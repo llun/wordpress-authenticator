@@ -2,32 +2,30 @@ How to deploy
 
  1. Copy wordpress.py and wordpressmysql.py to twistedcaldav/directory directory in calendar server library directory.
  2. Add wordpress directory service in caldavd.plist like below.
-{{{
-<!-- WordPress MySQL Directory Service -->
-<key>DirectoryService</key>
-<dict>
-  <key>type</key>
-  <string>twistedcaldav.directory.wordpressmysql.WordpressMySQLDirectoryService</string>
+        <!-- WordPress MySQL Directory Service -->
+        <key>DirectoryService</key>
+        <dict>
+          <key>type</key>
+          <string>twistedcaldav.directory.wordpressmysql.WordpressMySQLDirectoryService</string>
 
-  <key>params</key>
-  <dict>
-    <key>host</key>
-    <string>localhost</string>
+          <key>params</key>
+          <dict>
+            <key>host</key>
+            <string>localhost</string>
 
-    <key>username</key>
-    <string>wordpress_mysql_username</string>
+            <key>username</key>
+            <string>wordpress_mysql_username</string>
 
-    <key>password</key>
-    <string>wordpress_mysql_password</string>
+            <key>password</key>
+            <string>wordpress_mysql_password</string>
 
-    <key>database</key>
-    <string>wordpress_database</string>
+            <key>database</key>
+            <string>wordpress_database</string>
 
-    <key>prefix</key>
-    <string>wp_</string>
-  </dict>
-</dict>
-}}}
+            <key>prefix</key>
+            <string>wp_</string>
+          </dict>
+        </dict>
  3. Restart calendar server.
 
 How to test
