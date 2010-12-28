@@ -102,9 +102,16 @@ class WordpressMySQLDirectoryService(DirectoryService):
       cursor.close()
       
       user_fullname = ""
+      firstname = ""
+      lastname = ""
       
       if user_firstname is not None:
-        user_fullname = "%s %s"%(user_firstname[0], user_lastname[0])
+        firstname = user_firstname[0]
+        lastname = user_lastname[0]
+        
+        user_fullname = "%s %s"%(firstname, lastname)
+      else:
+        user_fullname = user_login
       
       record = WordpressMySQLDirectoryRecord(service = self,
                                              recordType = recordType,
@@ -112,8 +119,8 @@ class WordpressMySQLDirectoryService(DirectoryService):
                                              shortNames = (user_login, ),
                                              email = "mailto:%s"%user_mail,
                                              password = user_pass,
-                                             firstname = user_firstname[0],
-                                             lastname = user_lastname[0],
+                                             firstname = firstname,
+                                             lastname = lastname,
                                              fullname = user_fullname)
       self.cache[user_login] = record
       records.append(record)
