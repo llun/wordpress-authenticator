@@ -52,7 +52,7 @@ function new_wordpress_provider(host)
 	function provider.user_exists(username)
 	  log("debug", "Exists %s", username);
 	  local pass = false;
-	  local query  = string.format("select id from %susers where `user_login` = '%s'", prefix, username);
+	  local query  = string.format("select id from %susers where `user_login` = '%s'", mysql_prefix, username);
 	  local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
     local cursor = assert (connection:execute (query));
     if cursor:numrows() > 0 then
