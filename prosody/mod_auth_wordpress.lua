@@ -17,7 +17,6 @@ local mysql_password = module:get_option("wordpress_mysql_password") or "";
 local mysql_prefix = module:get_option("wordpress_mysql_prefix") or "wp_";
 
 local env = assert(db.mysql())
-local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port))
 
 function new_wordpress_provider(host)
 	local provider = { name = "wordpress" };
@@ -26,6 +25,7 @@ function new_wordpress_provider(host)
 	function provider.test_password(username, password)
     local pass = false;
     local query = string.format("select user_pass from %susers where `user_login` = '%s'", mysql_prefix, username);
+    local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
     local cursor = assert (connection:execute (query));
     if cursor:numrows() > 0 then
       user_pass = cursor:fetch();
@@ -35,6 +35,7 @@ function new_wordpress_provider(host)
     end
 		
 		cursor:close();
+		connection:close();
 		
 		if pass then
 			return true;
@@ -49,21 +50,23 @@ function new_wordpress_provider(host)
   function provider.create_user(username, password) return nil, "Account creation/modification not available with Wordpress.";	end
 
 	function provider.user_exists(username)
-	  log("debug", "Exists %s", username)
-	  local pass = false
-	  local query  = string.format("select id from %susers where `user_login` = '%s'", prefix, username)
-    local cursor = assert (connection:execute (query))
+	  log("debug", "Exists %s", username);
+	  local pass = false;
+	  local query  = string.format("select id from %susers where `user_login` = '%s'", prefix, username);
+	  local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
+    local cursor = assert (connection:execute (query));
     if cursor:numrows() > 0 then
-      pass = true
+      pass = true;
     end
     
-    cursor:close()
+    cursor:close();
+    connection:close();
 	  
 		if not pass then
-			log("debug", "Account not found for username '%s' at host '%s'", username, module.host)
-			return nil, "Auth failed. Invalid username"
+			log("debug", "Account not found for username '%s' at host '%s'", username, module.host);
+			return nil, "Auth failed. Invalid username";
 		end
-		return true
+		return true;
 	end
 
 	function provider.get_sasl_handler()
