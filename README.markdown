@@ -16,6 +16,10 @@ Before use authenticator, user must install md5 plugins to wordpress.
           wordpress_mysql_username = "wordpress_user";
           wordpress_mysql_password = "wordpress_pass";
           wordpress_mysql_prefix = "wp_";
+   2.1 If you want to use groups with Wordpress UAM Plugins, enable wordpress_mysql_groups in VirtualHost.
+        VirtualHost "sample.com"
+          ...
+          wordpress_mysql_groups = true;
   3. Restart prosody.
      
 
