@@ -20,83 +20,83 @@ local mysql_prefix = module:get_option("wordpress_mysql_prefix") or "wp_";
 local env = assert(db.mysql());
 
 function inject_roster_contacts(username, host, roster)
-	--module:log("debug", "Injecting group members to roster");
-	local bare_jid = username.."@"..host;
-	if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
-	
-	local function import_jids_to_roster(group_name)
-		for jid in pairs(groups[group_name]) do
-			-- Add them to roster
-			--module:log("debug", "processing jid %s in group %s", tostring(jid), tostring(group_name));
-			if jid ~= bare_jid then
-				if not roster[jid] then roster[jid] = {}; end
-				roster[jid].subscription = "both";
-				if groups[group_name][jid] then
-					roster[jid].name = groups[group_name][jid];
-				end
-				if not roster[jid].groups then
-					roster[jid].groups = { [group_name] = true };
-				end
-				roster[jid].groups[group_name] = true;
-				roster[jid].persist = false;
-			end
-		end
-	end
+  --module:log("debug", "Injecting group members to roster");
+  local bare_jid = username.."@"..host;
+  if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
+  
+  local function import_jids_to_roster(group_name)
+    for jid in pairs(groups[group_name]) do
+      -- Add them to roster
+      --module:log("debug", "processing jid %s in group %s", tostring(jid), tostring(group_name));
+      if jid ~= bare_jid then
+        if not roster[jid] then roster[jid] = {}; end
+        roster[jid].subscription = "both";
+        if groups[group_name][jid] then
+          roster[jid].name = groups[group_name][jid];
+        end
+        if not roster[jid].groups then
+          roster[jid].groups = { [group_name] = true };
+        end
+        roster[jid].groups[group_name] = true;
+        roster[jid].persist = false;
+      end
+    end
+  end
 
-	-- Find groups this JID is a member of
-	if members[bare_jid] then
-		for _, group_name in ipairs(members[bare_jid]) do
-			--module:log("debug", "Importing group %s", group_name);
-			import_jids_to_roster(group_name);
-		end
-	end
-	
-	-- Import public groups
-	if members[false] then
-		for _, group_name in ipairs(members[false]) do
-			--module:log("debug", "Importing group %s", group_name);
-			import_jids_to_roster(group_name);
-		end
-	end
-	
-	if roster[false] then
-		roster[false].version = true;
-	end
+  -- Find groups this JID is a member of
+  if members[bare_jid] then
+    for _, group_name in ipairs(members[bare_jid]) do
+      --module:log("debug", "Importing group %s", group_name);
+      import_jids_to_roster(group_name);
+    end
+  end
+  
+  -- Import public groups
+  if members[false] then
+    for _, group_name in ipairs(members[false]) do
+      --module:log("debug", "Importing group %s", group_name);
+      import_jids_to_roster(group_name);
+    end
+  end
+  
+  if roster[false] then
+    roster[false].version = true;
+  end
 end
 
 function remove_virtual_contacts(username, host, datastore, data)
-	if host == module_host and datastore == "roster" then
-		local new_roster = {};
-		for jid, contact in pairs(data) do
-			if contact.persist ~= false then
-				new_roster[jid] = contact;
-			end
-		end
-		if new_roster[false] then
-			new_roster[false].version = nil; -- Version is void
-		end
-		return username, host, datastore, new_roster;
-	end
+  if host == module_host and datastore == "roster" then
+    local new_roster = {};
+    for jid, contact in pairs(data) do
+      if contact.persist ~= false then
+        new_roster[jid] = contact;
+      end
+    end
+    if new_roster[false] then
+      new_roster[false].version = nil; -- Version is void
+    end
+    return username, host, datastore, new_roster;
+  end
 
-	return username, host, datastore, data;
+  return username, host, datastore, data;
 end
 
 function module.load()
   groups_wordpress_enable = module:get_option("wordpress_mysql_groups") or false;
   if not groups_wordpress_enable then return; end
-	
-	module:hook("roster-load", inject_roster_contacts);
-	datamanager.add_callback(remove_virtual_contacts);
-	
-	groups = { default = {} };
-	members = { };
-	
-	local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
-	
-	local query = string.format("select ID id, groupname name from %suam_accessgroups", mysql_prefix);
-	local cursor = assert(connection:execute (query));
-	
-	-- Fetch groups
+  
+  module:hook("roster-load", inject_roster_contacts);
+  datamanager.add_callback(remove_virtual_contacts);
+  
+  groups = { default = {} };
+  members = { };
+  
+  local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
+  
+  local query = string.format("select ID id, groupname name from %suam_accessgroups", mysql_prefix);
+  local cursor = assert(connection:execute (query));
+  
+  -- Fetch groups
   local row = cursor:fetch({}, "a");
   while row do
     if not members[false] then
@@ -137,10 +137,10 @@ function module.load()
   
   cursor:close();
   connection:close();
-	
-	module:log("info", "Groups loaded successfully");
+  
+  module:log("info", "Groups loaded successfully");
 end
 
 function module.unload()
-	datamanager.remove_callback(remove_virtual_contacts);
+  datamanager.remove_callback(remove_virtual_contacts);
 end
