@@ -99,10 +99,6 @@ function module.load()
   -- Fetch groups
   local row = cursor:fetch({}, "a");
   while row do
-    if not members[false] then
-      members[false] = {};
-    end
-    members[false][#members[false] + 1] = row.name;
     groups[row.name] = {}
     
     module:log("debug", "New group: %s", tostring(row.name));
