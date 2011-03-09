@@ -113,12 +113,19 @@ function module.load()
       local user_query = string.format("select user_login, display_name from %susers where ID = '%d'", mysql_prefix, group_row.object_id);
       local user_cursor = assert(connection:execute (user_query));
       local user_row = user_cursor:fetch({}, "a");
-      
-      jid = string.format("%s@%s", user_row.user_login, module_host);
-      groups[row.name][jid] = user_row.display_name or false;
-      members[jid] = members[jid] or {};
-      members[jid][#members[jid] + 1] = row.name;
-      module:log("debug", "New member of %s: %s", row.name, jid);
+
+      local user_row_is_not_nil = true
+      if user_row == nil then 
+        user_row_is_not_nil = false
+      end
+
+      if user_row_is_not_nil then 
+        jid = string.format("%s@%s", user_row.user_login, module_host);
+        groups[row.name][jid] = user_row.display_name or false;
+        members[jid] = members[jid] or {};
+        members[jid][#members[jid] + 1] = row.name;
+        module:log("debug", "New member of %s: %s", row.name, jid);
+      end
       
       user_cursor:close();
       
