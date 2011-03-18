@@ -4,6 +4,11 @@ Before use authenticator, user must install md5 plugins to wordpress.
 
 #Prosody
 
+##Require library
+
+ 1. lua md5 lubrary.
+ 2. Wordpress must install MD5 Password Hashes.
+
 ##How to use
 
  1. Copy mod_auth_wordpress.lua to prosody plugins folder.
