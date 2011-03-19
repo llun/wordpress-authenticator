@@ -26,19 +26,29 @@ def parseCommand(client, user, message):
 def messageCB(client, message):
   text = message.getBody()
   user = message.getFrom()
-  
+ 
   if not parseCommand(client, user, text):
     if text is not None:
       roster = xmppClient.getRoster()
       items = roster.getItems()
+      sender = user.getNode()
+      
+      senderName = roster.getName(user.getStripped())
+      
+      message = None
+      if text[0:3] == '/me':
+        if len(text) > 4 and text[3] == ' ':
+          message = "/me %s: %s"%(senderName, text[4:])
+        else:
+          # Don't send any message to every one in group.
+          return
+      else:
+        message = "%s: %s"%(senderName, text)
+      
       for item in items:
-        jid = xmpp.JID(user)
         itemJID = xmpp.JID(item)
-        
-        sender = jid.getNode()
         receiver = itemJID.getNode()
         if item <> currentUser and receiver <> sender:
-          message = "%s: %s"%(jid.getNode(), text)
           client.send(xmpp.Message(item, message))
   
 ###### Bot initial process
