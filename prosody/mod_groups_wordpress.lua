@@ -110,7 +110,7 @@ function module.load()
     local group_row = group_cursor:fetch({}, "a");
     while group_row do
       -- Fetch user information
-      local user_query = string.format("select user_login, display_name from %susers where ID = '%d'", mysql_prefix, group_row.object_id);
+      local user_query = string.format("select user_login, display_name from %susers where ID = '%s'", mysql_prefix, group_row.object_id);
       local user_cursor = assert(connection:execute (user_query));
       local user_row = user_cursor:fetch({}, "a");
 
