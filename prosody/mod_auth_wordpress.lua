@@ -1,7 +1,8 @@
 -- Prosody Wordpress Authentication
 
 local datamanager = require "util.datamanager";
-local md5 = require "md5";
+local base64 = require "util.encodings".base64;
+local md5 = require "util.hashes".md5;
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local log = require "util.logger".init("auth_wordpress");
@@ -29,7 +30,7 @@ function new_wordpress_provider(host)
     local cursor = assert (connection:execute (query));
     if cursor:numrows() > 0 then
       user_pass = cursor:fetch();
-      md5_pass = md5.sumhexa(password)
+      md5_pass = md5(password, true);
       
       pass = md5_pass == user_pass;
     end
