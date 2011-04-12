@@ -27,11 +27,11 @@ Before use authenticator, user must install md5 plugins to wordpress.
           
  3. If you want to use groups with Wordpress UAM Plugins, enable wordpress_mysql_groups in VirtualHost.
    
-      VirtualHost "sample.com"
-        wordpress = {
-          ...
-          groups = true;
-        }
+        VirtualHost "sample.com"
+          wordpress = {
+            ...
+            groups = true;
+          }
         
  4. Restart prosody.
      
