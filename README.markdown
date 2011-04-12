@@ -25,7 +25,7 @@ Before use authenticator, user must install md5 plugins to wordpress.
             prefix = "wp_";
           };
           
-   2.1 If you want to use groups with Wordpress UAM Plugins, enable wordpress_mysql_groups in VirtualHost.
+  2.1 If you want to use groups with Wordpress UAM Plugins, enable wordpress_mysql_groups in VirtualHost.
    
       VirtualHost "sample.com"
         wordpress = {
@@ -33,7 +33,7 @@ Before use authenticator, user must install md5 plugins to wordpress.
           groups = true;
         }
         
-  3. Restart prosody.
+ 3. Restart prosody.
      
 
 #Darwin Calendar Server
