@@ -1,11 +1,15 @@
 -- Prosody Wordpress UAM Group
 
+local rostermanager = require "core.rostermanager";
 local datamanager = require "util.datamanager";
+local jid = require "util.jid";
 
 local DBI;
 local connection;
-local params = module:get_option("wordpress");
 
+local bare_sessions = bare_sessions;
+
+local params = module:get_option("wordpress");
 local module_host = module:get_host();
 
 function load_contacts()
@@ -40,11 +44,11 @@ function load_contacts()
             if user_stmt:rowcount() > 0 then
               local user_row = user_stmt:fetch(true);
               
-              jid = string.format("%s@%s", user_row.user_login, module_host);
-              groups[group_row.name][jid] = user_row.display_name or false;
-              members[jid] = members[jid] or {};
-              members[jid][#members[jid] + 1] = group_row.name;
-              module:log("debug", "New member of %s: %s", group_row.name, jid);
+              bare_jid = string.format("%s@%s", user_row.user_login, module_host);
+              groups[group_row.name][bare_jid] = user_row.display_name or false;
+              members[bare_jid] = members[bare_jid] or {};
+              members[bare_jid][#members[bare_jid] + 1] = group_row.name;
+              module:log("debug", "New member of %s: %s", group_row.name, bare_jid);
             end
             
             user_stmt:close();
@@ -66,35 +70,34 @@ function load_contacts()
 end
 
 function inject_roster_contacts(username, host, roster)
-  local groups, members;
-  groups, members = load_contacts();
-
-  module:log("debug", "Injecting group members to roster");
-  local bare_jid = username.."@"..host;
-  if not members[bare_jid] and not members[false] then return; end -- Not a member of any groups
+  local groups, members = load_contacts();
+  
+  local user_jid = username.."@"..host;
+  module:log("debug", "Injecting group members to roster %s", user_jid);
+  if not members[user_jid] and not members[false] then return; end -- Not a member of any groups
   
   local function import_jids_to_roster(group_name, groups)
-    for jid in pairs(groups[group_name]) do
+    for member_jid in pairs(groups[group_name]) do
       -- Add them to roster
-      module:log("debug", "processing jid %s in group %s", tostring(jid), tostring(group_name));
-      if jid ~= bare_jid then
-        if not roster[jid] then roster[jid] = {}; end
-        roster[jid].subscription = "both";
-        if groups[group_name][jid] then
-          roster[jid].name = groups[group_name][jid];
+      module:log("debug", "processing jid %s in group %s", tostring(member_jid), tostring(group_name));
+      if member_jid ~= user_jid then
+        if not roster[member_jid] then roster[member_jid] = {}; end
+        roster[member_jid].subscription = "both";
+        if groups[group_name][member_jid] then
+          roster[member_jid].name = groups[group_name][member_jid];
         end
-        if not roster[jid].groups then
-          roster[jid].groups = { [group_name] = true };
+        if not roster[member_jid].groups then
+          roster[member_jid].groups = { [group_name] = true };
         end
-        roster[jid].groups[group_name] = true;
-        roster[jid].persist = false;
+        roster[member_jid].groups[group_name] = true;
+        roster[member_jid].persist = false;
       end
     end
   end
 
   -- Find groups this JID is a member of
-  if members[bare_jid] then
-    for _, group_name in ipairs(members[bare_jid]) do
+  if members[user_jid] then
+    for _, group_name in ipairs(members[user_jid]) do
       module:log("debug", "Importing group %s", group_name);
       import_jids_to_roster(group_name, groups);
     end
@@ -105,6 +108,18 @@ function inject_roster_contacts(username, host, roster)
     for _, group_name in ipairs(members[false]) do
       module:log("debug", "Importing group %s", group_name);
       import_jids_to_roster(group_name, groups);
+    end
+  end
+  
+  for online_jid, user in pairs(bare_sessions) do
+    if (online_jid ~= user_jid) and roster[online_jid] then
+      local other_roster = user.roster;
+      if not other_roster[user_jid] then
+        local node, host, resource = jid.split(user_jid);
+        module:log("debug", "push %s to %s@%s", online_jid, node, host);
+        
+        rostermanager.roster_push(node, host, online_jid);
+      end
     end
   end
   
