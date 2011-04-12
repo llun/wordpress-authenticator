@@ -1,7 +1,6 @@
 -- Prosody Wordpress UAM Group
 
-local jid, datamanager = require "util.jid", require "util.datamanager";
-local jid_bare, jid_prep = jid.bare, jid.prep;
+local datamanager = require "util.datamanager";
 
 local DBI;
 local connection;
