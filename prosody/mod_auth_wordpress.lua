@@ -3,7 +3,6 @@
 local md5 = require "util.hashes".md5;
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
-local log = require "util.logger".init("auth_wordpress");
 
 local DBI;
 local connection;
@@ -11,7 +10,7 @@ local params = module:get_option("wordpress");
 
 function new_wordpress_provider(host)
   local provider = { name = "wordpress" };
-  log("debug", "initializing wordpress authentication provider for host '%s'", host);
+  module:log("debug", "initializing wordpress authentication provider for host '%s'", host);
 
   function provider.test_password(username, password)
     local pass = false;
@@ -46,7 +45,7 @@ function new_wordpress_provider(host)
   function provider.create_user(username, password) return nil, "Account creation/modification not available with Wordpress.";  end
 
   function provider.user_exists(username)
-    log("debug", "Exists %s", username);
+    module:log("debug", "Exists %s", username);
     local pass = false;
     local get_user_sql = string.format("select id from `%susers` where `user_login` = ?;", params.prefix);
     local stmt = connection:prepare(get_user_sql);
@@ -60,7 +59,7 @@ function new_wordpress_provider(host)
     end
     
     if not pass then
-      log("debug", "Account not found for username '%s' at host '%s'", username, module.host);
+      module:log("debug", "Account not found for username '%s' at host '%s'", username, module.host);
       return nil, "Auth failed. Invalid username";
     end
     return true;
@@ -74,7 +73,7 @@ function new_wordpress_provider(host)
       plain_test = function(sasl, username, password, realm)
         local prepped_username = nodeprep(username);
         if not prepped_username then
-          log("debug", "NODEprep failed on username: %s", username);
+          module:log("debug", "NODEprep failed on username: %s", username);
           return "", nil;
         end
         return provider.test_password(prepped_username, password), true;
