@@ -13,6 +13,7 @@ Before use authenticator, user must install md5 plugins to wordpress.
 
  1. Copy mod_auth_wordpress.lua to prosody plugins folder.
  2. Add authentication to VirtualHost and change mysql configuration to wordpress database.
+ 
         VirtualHost "sample.com"
           authentication = "wordpress";
           wordpress = {
@@ -23,12 +24,15 @@ Before use authenticator, user must install md5 plugins to wordpress.
             password = "password";
             prefix = "wp_";
           };
+          
    2.1 If you want to use groups with Wordpress UAM Plugins, enable wordpress_mysql_groups in VirtualHost.
+   
       VirtualHost "sample.com"
         wordpress = {
           ...
           groups = true;
         }
+        
   3. Restart prosody.
      
 
@@ -38,6 +42,7 @@ Before use authenticator, user must install md5 plugins to wordpress.
 
  1. Copy wordpress.py and wordpressmysql.py to twistedcaldav/directory directory in calendar server library directory.
  2. Add wordpress directory service in caldavd.plist like below. 
+ 
         <!-- WordPress MySQL Directory Service -->
         <key>DirectoryService</key>
         <dict>
@@ -62,6 +67,7 @@ Before use authenticator, user must install md5 plugins to wordpress.
             <string>wp_</string>
           </dict>
         </dict>
+        
  3. Restart calendar server.
 
 ##How to test
