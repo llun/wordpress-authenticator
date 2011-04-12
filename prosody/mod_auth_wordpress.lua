@@ -1,23 +1,13 @@
 -- Prosody Wordpress Authentication
 
-local datamanager = require "util.datamanager";
-local base64 = require "util.encodings".base64;
 local md5 = require "util.hashes".md5;
 local new_sasl = require "util.sasl".new;
 local nodeprep = require "util.encodings".stringprep.nodeprep;
 local log = require "util.logger".init("auth_wordpress");
-local db = require 'luasql.mysql'
 
-local hosts = hosts;
-
-local mysql_server = module:get_option("wordpress_mysql_host") or "localhost";
-local mysql_port = module:get_option("wordpress_mysql_port") or 3306;
-local mysql_database = module:get_option("wordpress_mysql_database") or "wordpress";
-local mysql_username = module:get_option("wordpress_mysql_username") or "root";
-local mysql_password = module:get_option("wordpress_mysql_password") or "";
-local mysql_prefix = module:get_option("wordpress_mysql_prefix") or "wp_";
-
-local env = assert(db.mysql())
+local DBI;
+local connection;
+local params = module:get_option("wordpress");
 
 function new_wordpress_provider(host)
   local provider = { name = "wordpress" };
@@ -25,19 +15,24 @@ function new_wordpress_provider(host)
 
   function provider.test_password(username, password)
     local pass = false;
-    local query = string.format("select user_pass from %susers where `user_login` = '%s'", mysql_prefix, username);
-    local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
-    local cursor = assert (connection:execute (query));
-    if cursor:numrows() > 0 then
-      user_pass = cursor:fetch();
-      md5_pass = md5(password, true);
+    local get_password_sql = string.format("select user_pass from `%susers` where `user_login` = ?;", params.prefix);
+    local stmt = connection:prepare(get_password_sql);
+    
+    if stmt then
+      stmt:execute(username);
       
-      pass = md5_pass == user_pass;
+      if stmt:rowcount() > 0 then
+        local row = stmt:fetch(true);
+        
+        local user_pass = row.user_pass;
+        local md5_pass = md5(password, true);
+        
+        pass = md5_pass == user_pass;
+      end
+      
+      stmt:close();
     end
-    
-    cursor:close();
-    connection:close();
-    
+
     if pass then
       return true;
     else
@@ -53,15 +48,16 @@ function new_wordpress_provider(host)
   function provider.user_exists(username)
     log("debug", "Exists %s", username);
     local pass = false;
-    local query  = string.format("select id from %susers where `user_login` = '%s'", mysql_prefix, username);
-    local connection = assert(env:connect(mysql_database, mysql_username, mysql_password, mysql_server, mysql_port));
-    local cursor = assert (connection:execute (query));
-    if cursor:numrows() > 0 then
-      pass = true;
-    end
+    local get_user_sql = string.format("select id from `%susers` where `user_login` = ?;", params.prefix);
+    local stmt = connection:prepare(get_user_sql);
     
-    cursor:close();
-    connection:close();
+    if stmt then
+      stmt:execute(username);
+      if stmt:rowcount() > 0 then
+        pass = true;
+      end      
+      stmt:close();
+    end
     
     if not pass then
       log("debug", "Account not found for username '%s' at host '%s'", username, module.host);
@@ -89,6 +85,63 @@ function new_wordpress_provider(host)
   end
   
   return provider;
+end
+
+-- database methods from mod_storage_sql.lua
+local function test_connection()
+	if not connection then return nil; end
+	if connection:ping() then
+		return true;
+	else
+		module:log("debug", "Database connection closed");
+		connection = nil;
+	end
+end
+
+local function connect()
+	if not test_connection() then
+		prosody.unlock_globals();
+		local dbh, err = DBI.Connect(
+			"MySQL", params.database,
+			params.username, params.password,
+			params.host, params.port
+		);
+		prosody.lock_globals();
+		if not dbh then
+			module:log("debug", "Database connection failed: %s", tostring(err));
+			return nil, err;
+		end
+		module:log("debug", "Successfully connected to database");
+		dbh:autocommit(false); -- don't commit automatically
+		connection = dbh;
+		return connection;
+	end
+end
+
+do -- process options to get a db connection
+	local ok;
+	prosody.unlock_globals();
+	ok, DBI = pcall(require, "DBI");
+	if not ok then
+		package.loaded["DBI"] = {};
+		module:log("error", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
+		module:log("error", "More information on installing LuaDBI can be found at http://prosody.im/doc/depends#luadbi");
+	end
+	prosody.lock_globals();
+	if not ok or not DBI.Connect then
+		return; -- Halt loading of this module
+	end
+
+	params = params or {};
+	
+	params.host = params.host or "localhost";
+	params.port = params.port or 3306;
+	params.database = params.database or "wordpress";
+	params.username = params.username or "root";
+	params.password = params.password or "";
+	params.prefix = params.prefix or "wp_";
+	
+	assert(connect());
 end
 
 module:add_item("auth-provider", new_wordpress_provider(module.host));
