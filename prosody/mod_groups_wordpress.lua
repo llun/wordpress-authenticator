@@ -115,10 +115,11 @@ function inject_roster_contacts(username, host, roster)
     if (online_jid ~= user_jid) and roster[online_jid] then
       local other_roster = user.roster;
       if not other_roster[user_jid] then
-        local node, host, resource = jid.split(user_jid);
-        module:log("debug", "push %s to %s@%s", online_jid, node, host);
-        
-        rostermanager.roster_push(node, host, online_jid);
+        -- Don't need to make online user see new user but new user can see online user.
+        other_roster[user_jid] = {
+          subscription = "both";
+          persist = false;
+        };
       end
     end
   end
